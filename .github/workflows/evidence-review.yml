@@ -1,0 +1,37 @@
+name: Evidence review
+
+on:
+  pull_request:
+    paths:
+      - 'extensions/evidence-review/**'
+      - '.github/workflows/evidence-review.yml'
+  push:
+    branches: [main, feat/evidence-review]
+    paths:
+      - 'extensions/evidence-review/**'
+      - '.github/workflows/evidence-review.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.11', '3.14']
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: extensions/evidence-review
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install ".[test]"
+      - run: python -m pytest -q
+      - run: python demo.py --output demo-output

@@ -1,5 +1,7 @@
 # LLM Wiki
 
+This fork adds [Evidence Review](extensions/evidence-review/README.md), an experimental offline inspector for source revisions, local SHACL constraints and review history. [한국어 안내](extensions/evidence-review/README.ko.md). It runs separately from the desktop app. The original LLM Wiki project is maintained by [nashsu](https://github.com/nashsu/llm_wiki).
+
 <p align="center">
   <img src="logo.jpg" width="128" height="128" style="border-radius: 22%;" alt="LLM Wiki Logo">
 </p>

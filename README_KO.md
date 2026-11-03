@@ -1,5 +1,7 @@
 # LLM Wiki
 
+이 포크에는 원문 버전, 로컬 SHACL 규칙과 검토 이력을 확인하는 [근거 검토 확장](extensions/evidence-review/README.ko.md)을 추가했습니다. [English guide](extensions/evidence-review/README.md). 데스크톱 앱과 별도로 실행하는 실험적 도구입니다. 원본 LLM Wiki는 [nashsu](https://github.com/nashsu/llm_wiki)가 개발하고 관리합니다.
+
 <p align="center">
   <img src="logo.jpg" width="128" height="128" style="border-radius: 22%;" alt="LLM Wiki Logo">
 </p>
