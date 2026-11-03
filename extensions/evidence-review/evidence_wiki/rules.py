@@ -9,7 +9,7 @@ from pyshacl import validate
 from .inputs import DATATYPES
 
 
-POLICY_REVISION = "evidence-review-1:local-shacl-property-bounds-v1"
+POLICY_REVISION = "evidence-review-1:claim-scoped-local-shacl-property-bounds-v2"
 SUPPORTED_CONSTRAINTS = {SH.datatype, SH.minCount, SH.maxCount, SH.minInclusive, SH.maxInclusive,
                          SH.minLength, SH.maxLength}
 METADATA = {SH.name, SH.description, SH.message}
@@ -48,6 +48,7 @@ def check_rule(content: bytes, claim: dict) -> dict:
             raise ValueError("A typed sh:NodeShape is required.")
         owned_nodes = set(shapes)
         targets = set()
+        applicable_properties = []
         triple_subject = URIRef(claim["subject"])
         triple_predicate = URIRef(claim["predicate"])
         for shape in shapes:
@@ -79,6 +80,7 @@ def check_rule(content: bytes, claim: dict) -> dict:
                     raise ValueError("An actual property constraint is required.")
                 if matches_subject and paths[0] == triple_predicate:
                     targets.add(triple_subject)
+                    applicable_properties.append((shape, prop))
                 for predicate in SUPPORTED_CONSTRAINTS:
                     values = list(graph.objects(prop, predicate))
                     if len(values) > 1:
@@ -100,10 +102,20 @@ def check_rule(content: bytes, claim: dict) -> dict:
         if not targets:
             result["messages"] = ["No rule target matches this claim. Validation was not counted as a pass."]
             return result
+        scoped_rules = Graph()
+        for shape, prop in applicable_properties:
+            scoped_rules.add((shape, RDF.type, SH.NodeShape))
+            scoped_rules.add((shape, SH.targetNode, triple_subject))
+            scoped_rules.add((shape, SH.property, prop))
+            for predicate in METADATA:
+                for value in graph.objects(shape, predicate):
+                    scoped_rules.add((shape, predicate, value))
+            for triple in graph.triples((prop, None, None)):
+                scoped_rules.add(triple)
         data = Graph()
         data.add((triple_subject, triple_predicate, Literal(claim["value"], datatype=URIRef(claim["datatype"]), normalize=False)))
         conforms, report, _ = validate(
-            data_graph=data, shacl_graph=graph, inference="none", advanced=False,
+            data_graph=data, shacl_graph=scoped_rules, inference="none", advanced=False,
             js=False, do_owl_imports=False, inplace=False, abort_on_first=False,
             allow_infos=False, allow_warnings=False, meta_shacl=False,
         )

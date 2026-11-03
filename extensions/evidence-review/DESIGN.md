@@ -25,6 +25,10 @@ An inspection re-reads inputs. An explicit review must present the basis it insp
 
 None of these proves that a source is factually correct. A rule that permits 120 days may be inappropriate even when a 90-day claim conforms to it. The demo changes this rule to illustrate versioning, not to recommend a retention policy.
 
+Every rule file is checked in full against the supported safe profile. Validation then uses only property constraints whose shape targets the current claim's subject and whose direct path matches its predicate. Other subjects and properties need their own claims and checks. A shared rule file does not establish conformance of a complete multi-property entity. Malformed or unsupported constructs anywhere in the file still make the rule not checked. This scope is part of the versioned review policy, so earlier approvals require review after it changes.
+
+The standalone JSON inspection preserves Python integer values. The HTML display copy encodes integers outside JavaScript's safe range as decimal strings, retaining the declared RDF datatype. This prevents rounding in the visible claim and search without changing the source inspection, claim or review basis.
+
 ## Deliberate limits
 
 - Checks cover declared dependencies, not every page or claim in a native wiki.

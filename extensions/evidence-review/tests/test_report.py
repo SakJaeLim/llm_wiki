@@ -63,6 +63,31 @@ def test_demo_keeps_recorded_stages_and_labels_them_as_snapshots(tmp_path):
     assert "does not monitor file changes in real time" in document
 
 
+@pytest.mark.parametrize("value", [2**53, 2**53 + 1, -(2**53 + 1), 2**100])
+def test_html_preserves_unsafe_integer_lexemes_without_mutating_the_inspection(tmp_path, value):
+    report = {"claims": [{"id": "large", "value": value, "datatype": "http://www.w3.org/2001/XMLSchema#integer"}]}
+    bundle = {"demo": True, "stages": [{"id": "large", "inspection": report}]}
+    output = tmp_path / "report.html"
+    for original in (report, bundle):
+        render_report(original, output)
+        encoded = embedded_report(output.read_text(encoding="utf-8"))
+        inspection = encoded["stages"][0]["inspection"] if "stages" in encoded else encoded
+        assert inspection["claims"][0]["value"] == str(value)
+        assert inspection["claims"][0]["datatype"] == report["claims"][0]["datatype"]
+        assert report["claims"][0]["value"] == value
+        assert type(report["claims"][0]["value"]) is int
+
+
+@pytest.mark.parametrize("value", [2**53 - 1, -(2**53 - 1), True, False, 1.25, "9007199254740993"])
+def test_html_retains_safe_scalar_types(tmp_path, value):
+    report = {"claims": [{"id": "value", "value": value}]}
+    output = tmp_path / "report.html"
+    render_report(report, output)
+    actual = embedded_report(output.read_text(encoding="utf-8"))["claims"][0]["value"]
+    assert actual == value
+    assert type(actual) is type(value)
+
+
 class ResourceParser(HTMLParser):
     def __init__(self):
         super().__init__()

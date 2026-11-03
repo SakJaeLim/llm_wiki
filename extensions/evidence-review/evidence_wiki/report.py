@@ -2,13 +2,23 @@ import json
 from pathlib import Path
 
 
+def _browser_values(value):
+    if type(value) is int and abs(value) > 2**53 - 1:
+        return str(value)
+    if isinstance(value, dict):
+        return {key: _browser_values(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_browser_values(item) for item in value]
+    return value
+
+
 def render_report(report: dict, destination: Path, *, language: str = "ko") -> None:
-    """Write an inspection or recorded demo bundle as a self-contained HTML file."""
+    """Write offline HTML, encoding unsafe JavaScript integers as decimal strings."""
     if language not in {"ko", "en"}:
         raise ValueError("language must be 'ko' or 'en'")
     if not isinstance(report, dict):
         raise TypeError("report must be a dictionary")
-    data = json.dumps(report, ensure_ascii=False, allow_nan=False)
+    data = json.dumps(_browser_values(report), ensure_ascii=False, allow_nan=False)
     # JSON is inert data, but HTML's parser still recognizes closing script tags.
     for character, escape in (("&", "\\u0026"), ("<", "\\u003c"), (">", "\\u003e"),
                               ("\u2028", "\\u2028"), ("\u2029", "\\u2029")):

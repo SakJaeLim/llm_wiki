@@ -182,6 +182,52 @@ def test_real_shacl_violation_cannot_be_accepted(root):
     assert raised.value.code == "checks_failed"
 
 
+@pytest.mark.parametrize("shared_node", [False, True])
+def test_shared_rule_file_checks_only_the_claim_property(root, shared_node):
+    retention = (root / "rules/retention.ttl").read_text(encoding="utf-8")
+    owner = (root / "rules/owner.ttl").read_text(encoding="utf-8")
+    if shared_node:
+        owner = owner.replace("demo:OwnerShape", "demo:RetentionShape")
+    (root / "rules/shared.ttl").write_text(retention + "\n" + owner, encoding="utf-8")
+    edit_manifest(root, lambda m: [item.update(rules=["rules/shared.ttl"]) for item in m["claims"]])
+    workspace = EvidenceWorkspace.open(root)
+    report = workspace.inspect()
+    assert [item["rules"][0]["status"] for item in report["claims"]] == ["conforms", "conforms"]
+    assert accept(workspace)["eligibility"] == "eligible"
+    assert accept(workspace, "owner")["eligibility"] == "eligible"
+    edit_manifest(root, lambda m: m["claims"][0].update(value=90))
+    report = workspace.inspect()
+    assert [item["rules"][0]["status"] for item in report["claims"]] == ["violates", "conforms"]
+
+
+def test_shared_rule_targets_do_not_require_unrelated_subject_triples(root):
+    path = root / "rules/retention.ttl"
+    path.write_text(path.read_text(encoding="utf-8").replace(
+        "sh:targetNode demo:project", "sh:targetNode demo:project, demo:other"), encoding="utf-8")
+    current = claim(EvidenceWorkspace.open(root))
+    assert current["rules"][0]["status"] == "conforms"
+    assert current["rules"][0]["focus_count"] == 1
+
+
+def test_every_relevant_constraint_remains_active(root):
+    path = root / "rules/retention.ttl"
+    second = path.read_text(encoding="utf-8").replace("demo:RetentionShape", "demo:StricterShape").replace("sh:maxInclusive 60", "sh:maxInclusive 20")
+    path.write_text(path.read_text(encoding="utf-8") + "\n" + second, encoding="utf-8")
+    current = claim(EvidenceWorkspace.open(root))
+    assert current["rules"][0]["status"] == "violates"
+    assert current["eligibility"] == "blocked"
+
+
+def test_unrelated_unsafe_shape_still_rejects_the_whole_rule_file(root):
+    path = root / "rules/retention.ttl"
+    owner = (root / "rules/owner.ttl").read_text(encoding="utf-8")
+    owner += "\ndemo:OwnerShape sh:sparql [] .\n"
+    path.write_text(path.read_text(encoding="utf-8") + "\n" + owner, encoding="utf-8")
+    current = claim(EvidenceWorkspace.open(root))
+    assert current["rules"][0]["status"] == "not_checked"
+    assert current["eligibility"] == "blocked"
+
+
 @pytest.mark.parametrize("old,new", [("sh:targetNode demo:project", "sh:targetNode demo:other"),
                                        ("sh:path demo:retentionDays", "sh:path demo:other")])
 def test_zero_relevant_focus_is_not_checked(root, old, new):
