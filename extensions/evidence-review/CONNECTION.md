@@ -4,6 +4,12 @@
 
 This local service connects a native NVIDIA Auto Ontology model export to the actual Microsoft Ontology Playground Designer and this extension's review store. It imports JSON or safe YAML, preserves the exact UTF-8 source, opens a bound draft in the editor, and records explicit decisions against the current evidence. No model server or API key is needed.
 
+![Actual Microsoft Designer connected to the local workspace](assets/connection-editor.jpg)
+
+![A later edit requires review while retaining the prior decision](assets/connection-recheck.jpg)
+
+[Watch the 20-second captured-state walkthrough](assets/connection-walkthrough.mp4). It combines four actual in-app browser captures: import, editing, approval and subsequent review invalidation. These are captured states, not a screen recording of continuous motion.
+
 ## Run
 
 Build [the connected Playground fork](https://github.com/SakJaeLim/Ontology-Playground) first. In PowerShell, inside its checkout:
@@ -58,3 +64,4 @@ NVIDIA 데이터 사전을 가져와 Microsoft의 실제 온톨로지 편집기�
 첫 연결에서는 설명 편집을 지원합니다. 이름, 자료형, 순서, 관계와 구조 변경은 저장할 수 없습니다. 원본 파일과 편집본은 따로 보존하며, SQL이나 관계 등 화면에 옮기지 않은 정보는 내보내기 파일에 포함됩니다. 예제에는 실제 기관 정보가 없습니다.
 
 형식 검사가 통과해도 설명이 사실이거나 원문과 의미가 같다는 보장은 없습니다. 원문과 제안문은 모두 사용자가 넣은 자료에서 나온 것이므로, 검토자가 직접 확인해야 합니다. 이 서비스는 같은 작업 공간에 여러 프로세스가 동시에 쓰는 환경을 지원하지 않습니다.
+
