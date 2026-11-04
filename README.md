@@ -1,5 +1,7 @@
 # LLM Wiki
 
+> The review component is now maintained as **[Ontology Review](https://github.com/SakJaeLim/ontology-review)**, an independent repository with its own setup, screenshots, videos and CI. The earlier component snapshot remains in this fork. [한국어](https://github.com/SakJaeLim/ontology-review/blob/main/README.ko.md).
+
 This fork adds [Evidence Review](extensions/evidence-review/README.md), an experimental offline inspector for source revisions, local SHACL constraints and review history. [한국어 안내](extensions/evidence-review/README.ko.md). It runs separately from the desktop app. The original LLM Wiki project is maintained by [nashsu](https://github.com/nashsu/llm_wiki).
 
 <p align="center">

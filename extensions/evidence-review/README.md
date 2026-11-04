@@ -1,5 +1,7 @@
 # Evidence Review for LLM Wiki
 
+> **Continued in [Ontology Review](https://github.com/SakJaeLim/ontology-review).** Use the standalone repository for current setup, media and verification. This directory preserves the earlier extension and its history.
+
 [한국어](README.ko.md) / English
 
 A small offline extension for examining claims, source revisions and local ontology constraints. It preserves earlier decisions and shows which declared wiki pages need attention after a source or rule changes.

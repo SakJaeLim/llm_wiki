@@ -1,5 +1,7 @@
 # LLM Wiki 근거 검토 확장
 
+> **[Ontology Review 독립 저장소](https://github.com/SakJaeLim/ontology-review)로 이어집니다.** 최신 실행 안내와 미디어, 검증 기록은 [새 README](https://github.com/SakJaeLim/ontology-review/blob/main/README.ko.md)를 확인하세요. 이 폴더는 이전 확장과 개발 이력을 보존합니다.
+
 한국어 / [English](README.md)
 
 문서의 주장과 원문, 온톨로지 규칙을 함께 확인하는 로컬 검토 도구입니다. 예전 승인 기록을 보존하면서 원문이나 규칙이 바뀐 뒤 어떤 위키 페이지를 다시 살펴봐야 하는지 보여줍니다.

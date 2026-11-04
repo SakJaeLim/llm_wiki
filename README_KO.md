@@ -1,5 +1,7 @@
 # LLM Wiki
 
+> 근거 검토 도구는 이제 독립 저장소 **[Ontology Review](https://github.com/SakJaeLim/ontology-review)**에서 관리합니다. 실행 안내와 이미지, 영상, CI는 [새 한국어 README](https://github.com/SakJaeLim/ontology-review/blob/main/README.ko.md)를 확인하세요. 이 포크에는 이전 개발본을 보존합니다.
+
 이 포크에는 원문 버전, 로컬 SHACL 규칙과 검토 이력을 확인하는 [근거 검토 확장](extensions/evidence-review/README.ko.md)을 추가했습니다. [English guide](extensions/evidence-review/README.md). 데스크톱 앱과 별도로 실행하는 실험적 도구입니다. 원본 LLM Wiki는 [nashsu](https://github.com/nashsu/llm_wiki)가 개발하고 관리합니다.
 
 <p align="center">
