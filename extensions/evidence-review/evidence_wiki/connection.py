@@ -110,16 +110,20 @@ def parse_dictionary(content: str) -> tuple[dict, str]:
         if not isinstance(content, str) or len(content.encode("utf-8")) > MAX_SOURCE_BYTES:
             _fail("The UTF-8 dictionary must be at most 1 MiB.")
         document_text = content.removeprefix("\ufeff")
+        kind = "yaml"
         if document_text.lstrip().startswith(("{", "[")):
-            document = json.loads(document_text, object_pairs_hook=_unique_pairs,
-                                  parse_constant=lambda item: _fail("Non-finite numbers are not supported."))
-            kind = "json"
-        else:
+            try:
+                document = json.loads(document_text, object_pairs_hook=_unique_pairs,
+                                      parse_constant=lambda item: _fail("Non-finite numbers are not supported."))
+            except json.JSONDecodeError:
+                pass
+            else:
+                kind = "json"
+        if kind == "yaml":
             for token in yaml.scan(document_text):
                 if isinstance(token, (yaml.tokens.AliasToken, yaml.tokens.AnchorToken, yaml.tokens.TagToken)):
                     _fail("YAML aliases, anchors and explicit tags are not supported.")
             document = yaml.load(document_text, Loader=_DictionaryLoader)
-            kind = "yaml"
         _bounded(document)
         return _object(document, "model document"), kind
     except (ValueError, UnicodeError, RecursionError, yaml.YAMLError) as exc:

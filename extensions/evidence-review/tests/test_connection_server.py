@@ -1,4 +1,5 @@
 from copy import deepcopy
+from contextlib import contextmanager, nullcontext
 import http.client
 from importlib.resources import files
 import json
@@ -33,12 +34,25 @@ def request(server, path, body=None, *, extra=None, session=True):
         headers.update({"Content-Type": "application/json", "Origin": server.origin, "X-CSRF-Token": server.csrf})
     headers.update(extra or {})
     connection = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=10)
-    connection.request("POST" if body is not None else "GET", path, body=None if body is None else json.dumps(body).encode(), headers=headers)
-    response = connection.getresponse()
-    data = response.read()
-    status, response_headers = response.status, dict(response.getheaders())
-    connection.close()
-    return status, response_headers, data
+    try:
+        connection.request("POST" if body is not None else "GET", path, body=None if body is None else json.dumps(body).encode(), headers=headers)
+        response = connection.getresponse()
+        data = response.read()
+        return response.status, dict(response.getheaders()), data
+    finally:
+        connection.close()
+
+
+@contextmanager
+def early_rejection(server):
+    """An unread rejected POST may be reset; the next authenticated read must succeed."""
+    before = server.workspace.state()
+    try:
+        yield
+    except (ConnectionResetError, ConnectionAbortedError):
+        pass
+    status, _, raw = request(server, "/api/state")
+    assert status == 200 and json.loads(raw) == before
 
 
 def test_session_is_stable_and_api_requires_cookie(server):
@@ -57,13 +71,18 @@ def test_session_is_stable_and_api_requires_cookie(server):
     {"Sec-Fetch-Site": "cross-site"}, {"Origin": "null"},
 ])
 def test_cross_site_or_unauthenticated_mutations_are_rejected(server, extra):
-    assert request(server, "/api/editor", {}, extra=extra)[0] == 403
+    body = {"expectedRevision": "empty", "filename": "security-fixture.json",
+            "content": files("evidence_wiki").joinpath("web/example.json").read_text(encoding="utf-8")}
+    with early_rejection(server):
+        assert request(server, "/api/import", body, extra=extra)[0] == 403
     assert server.workspace.state()["revision"] == "empty"
 
 
 def test_body_and_static_path_boundaries(server):
-    assert request(server, "/api/editor", {}, extra={"Content-Type": "text/plain"})[0] == 415
-    assert request(server, "/api/editor", {}, extra={"Content-Length": str(MAX_BODY_BYTES + 1)})[0] == 413
+    with early_rejection(server):
+        assert request(server, "/api/editor", {}, extra={"Content-Type": "text/plain"})[0] == 415
+    with early_rejection(server):
+        assert request(server, "/api/editor", {}, extra={"Content-Length": str(MAX_BODY_BYTES + 1)})[0] == 413
     assert request(server, "/api/editor", {"unexpected": "value"})[0] == 400
     assert request(server, "/editor/%2e%2e/workspace/workspace.json")[0] != 200
     assert request(server, "/editor/C:/Windows/win.ini")[0] != 200
@@ -82,18 +101,21 @@ def test_body_and_static_path_boundaries(server):
     ([], b'{"expectedRevision":"empty","ontology":"\xff"}'),
 ])
 def test_duplicate_headers_and_malformed_bodies_cannot_write(server, headers, body):
-    connection = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=10)
-    connection.putrequest("POST", "/api/editor", skip_host=True)
-    for name, value in [("Host", server.host), ("Origin", server.origin),
-                        ("Cookie", "evidence_connection=" + server.session),
-                        ("X-CSRF-Token", server.csrf), ("Content-Type", "application/json"),
-                        ("Content-Length", str(len(body))), *headers]:
-        connection.putheader(name, value)
-    connection.endheaders(body)
-    response = connection.getresponse()
-    response.read()
-    assert response.status in (400, 403, 422)
-    connection.close()
+    with early_rejection(server) if headers else nullcontext():
+        connection = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=10)
+        try:
+            connection.putrequest("POST", "/api/editor", skip_host=True)
+            for name, value in [("Host", server.host), ("Origin", server.origin),
+                                ("Cookie", "evidence_connection=" + server.session),
+                                ("X-CSRF-Token", server.csrf), ("Content-Type", "application/json"),
+                                ("Content-Length", str(len(body))), *headers]:
+                connection.putheader(name, value)
+            connection.endheaders(body)
+            response = connection.getresponse()
+            response.read()
+            assert response.status in (400, 403, 422)
+        finally:
+            connection.close()
     assert server.workspace.state()["revision"] == "empty"
 
 

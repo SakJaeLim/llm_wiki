@@ -38,9 +38,10 @@ def test_raw_bytes_unicode_bom_and_newlines_are_preserved(connection, original):
     assert state["bindings"][0]["properties"][0]["columnId"] == "column-dataset-id"
 
 
-def test_safe_yaml_has_the_same_projection(connection, original):
+@pytest.mark.parametrize("flow_style", [False, True])
+def test_safe_yaml_has_the_same_projection(connection, original, flow_style):
     document = json.loads(original)
-    raw = yaml.safe_dump(document, allow_unicode=True, sort_keys=False)
+    raw = yaml.safe_dump(document, allow_unicode=True, sort_keys=False, default_flow_style=flow_style)
     state = imported(connection, raw)
     expected, _, _ = project_dictionary(document)
     assert state["ontology"] == expected
@@ -48,7 +49,10 @@ def test_safe_yaml_has_the_same_projection(connection, original):
     assert connection.export()["source"]["content"] == raw
 
 
-@pytest.mark.parametrize("raw", ['{"x":1,"x":2}', "x: 1\nx: 2", "x: &source [1]\ny: *source", "x: !!str 12", "x: .nan", "x: 2000-01-01", '{"x": NaN}', "[]", "[" * 40 + "0" + "]" * 40])
+@pytest.mark.parametrize("raw", ['{"x":1,"x":2}', "x: 1\nx: 2", "{x: 1, x: 2}",
+    "x: &source [1]\ny: *source", "{x: &source [1], y: *source}",
+    "x: !!str 12", "{x: !!str 12}", "x: .nan", "{x: .nan}", "x: 2000-01-01",
+    '{"x": NaN}', '{"x": Infinity}', '{"x": -Infinity}', "[]", "[" * 40 + "0" + "]" * 40])
 def test_unsafe_or_ambiguous_inputs_are_rejected(raw):
     with pytest.raises(EvidenceError):
         parse_dictionary(raw)
